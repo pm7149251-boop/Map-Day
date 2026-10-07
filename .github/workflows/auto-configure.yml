@@ -1,0 +1,66 @@
+name: Auto Setup and Android Build
+
+on:
+  push:
+    branches: [ main ]
+
+# Grant the system token permissions to change settings, labels, and compile code
+permissions:
+  administration: write
+  contents: write
+  issues: write
+
+jobs:
+  infrastructure-setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure Repository Settings & Labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 1. Update Repository Settings
+          gh repo edit ${{ github.repository }} \
+            --enable-wiki=false \
+            --enable-projects=false \
+            --delete-branch-on-merge=true \
+            --allow-squash-merge=true
+
+          # 2. Create Custom C++ Voxel Engine Project Labels
+          # (Ignores error if the label already exists)
+          gh label create "3d-engine" --color "0075ca" --description "Core C++ engine issues" --force || true
+          gh label create "android-build" --color "3ddc84" --description "Android compilation errors" --force || true
+          gh label create "low-poly-assets" --color "ed782f" --description "Pixel textures and 3D grid layout" --force || true
+
+  compile-android-apk:
+    needs: infrastructure-setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Android NDK
+        uses: android-actions/setup-android@v3
+        with:
+          ndk-version: '25.2.9519653' # Standard NDK toolchain for Raymob C++
+
+      - name: Make Gradle Executable
+        run: chmod +x gradlew
+
+      - name: Compile Native C++ APK
+        run: ./gradlew assembleDebug
+
+      - name: Upload Finished Voxel App APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoxelMapDesigner-Debug-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          
