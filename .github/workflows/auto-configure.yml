@@ -26,7 +26,7 @@ jobs:
             --enable-wiki=false \
             --enable-projects=false \
             --delete-branch-on-merge=true \
-            --allow-squash-merge=true
+            --enable-squash-merge=true
 
           # 2. Create Custom C++ Voxel Engine Project Labels
           gh label create "3d-engine" --color "0075ca" --description "Core C++ engine issues" --force || true
