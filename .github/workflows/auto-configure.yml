@@ -4,9 +4,8 @@ on:
   push:
     branches: [ main ]
 
-# Grant the system token permissions to change settings, labels, and compile code
+# Standard permissions for code and issues (Administration is removed from here)
 permissions:
-  administration: write
   contents: write
   issues: write
 
@@ -19,7 +18,8 @@ jobs:
 
       - name: Configure Repository Settings & Labels
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use your custom high-privilege token to allow administrative edits
+          GH_TOKEN: ${{ secrets.ADMIN_PAT }} 
         run: |
           # 1. Update Repository Settings
           gh repo edit ${{ github.repository }} \
@@ -29,7 +29,6 @@ jobs:
             --allow-squash-merge=true
 
           # 2. Create Custom C++ Voxel Engine Project Labels
-          # (Ignores error if the label already exists)
           gh label create "3d-engine" --color "0075ca" --description "Core C++ engine issues" --force || true
           gh label create "android-build" --color "3ddc84" --description "Android compilation errors" --force || true
           gh label create "low-poly-assets" --color "ed782f" --description "Pixel textures and 3D grid layout" --force || true
@@ -50,7 +49,7 @@ jobs:
       - name: Setup Android NDK
         uses: android-actions/setup-android@v3
         with:
-          ndk-version: '25.2.9519653' # Standard NDK toolchain for Raymob C++
+          ndk-version: '25.2.9519653'
 
       - name: Make Gradle Executable
         run: chmod +x gradlew
@@ -63,4 +62,3 @@ jobs:
         with:
           name: VoxelMapDesigner-Debug-APK
           path: app/build/outputs/apk/debug/app-debug.apk
-          
